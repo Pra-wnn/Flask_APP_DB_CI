@@ -35,10 +35,9 @@ jobs:
                 echo "Contents of Working Directory $(ls -l)"
                 echo "Contents of site-packages $(ls -l venv/lib/python3.9/site-packages)"
   
-            - name: Change the directory to the tests folder and Run tests
+            - name: Run the tests from the test.py file
               run: |
-                cd tests
-                python -m unittest discover test.py
+                python -m unittest discover -s ./tests -p "test.py" 
 
 #In a GitHub Actions workflow, each run command is executed in a new shell session, 
 #so you need to activate the virtual environment in each step where it is required. 
