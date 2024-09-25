@@ -2,8 +2,7 @@ name: Run unit tests
 
 on:
     push:
-        branches:
-            -main
+        branches: [ main ]
 
 jobs:
     test:
@@ -16,7 +15,7 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v4
               with:
-                python-version: 3.9
+                python-version: '3.9'
             - name: Create virtual environment
               run: |
                 python -m venv venv
@@ -26,14 +25,15 @@ jobs:
               run: |
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
-                name: Print debugging information
-                run: |
-                  echo "Python version $(python --version) running"
-                  echo "Pip version $(pip --version) running"
-                  echo "Flask version $(pip show flask | grep Version) running"
-                  echo "Working Directory $(pwd)"
-                  echo "Contents of Working Directory $(ls -l)"
-                  echo "Contents of site-packages $(ls -l venv/lib/python3.9/site-packages)"
+
+            - name: Print debugging information
+              run: |
+                echo "Python version $(python --version) running"
+                echo "Pip version $(pip --version) running"
+                echo "Flask version $(pip show flask | grep Version) running"
+                echo "Working Directory $(pwd)"
+                echo "Contents of Working Directory $(ls -l)"
+                echo "Contents of site-packages $(ls -l venv/lib/python3.9/site-packages)"
                   
             - name: Run tests
               run: |
