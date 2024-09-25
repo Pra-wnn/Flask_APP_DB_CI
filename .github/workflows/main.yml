@@ -37,7 +37,6 @@ jobs:
   
             - name: Change the directory to the tests folder and Run tests
               run: |
-                source venv/bin/activate
                 cd tests
                 python -m unittest discover test.py
 
