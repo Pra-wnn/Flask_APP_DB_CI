@@ -34,13 +34,11 @@ jobs:
                 echo "Working Directory $(pwd)"
                 echo "Contents of Working Directory $(ls -l)"
                 echo "Contents of site-packages $(ls -l venv/lib/python3.9/site-packages)"
-            
-            - name: Change the directory to the tests folder
-              run: cd tests
-
-            - name: Run tests
+  
+            - name: Change the directory to the tests folder and Run tests
               run: |
                 source venv/bin/activate
+                cd tests
                 python -m unittest discover test.py
 
 #In a GitHub Actions workflow, each run command is executed in a new shell session, 
