@@ -1,64 +1,81 @@
 name: CI / CD Pipeline
 
 on:
-    push:
-        branches: [ main ]
-    pull_request:
-        branches: [ main ]
-
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-    test:
-        runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-              # Equivalent to git pull
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                python-version: '3.9'
-            - name: Create virtual environment
-              run: |
-                python -m venv venv
-                source venv/bin/activate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Create virtual environment and install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          python -m unittest discover -s ./tests -p "test.py"
 
-            - name: Install dependencies
-              run: |
-                python -m pip install --upgrade pip
-                pip install -r requirements.txt
+  verify_and_deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-            - name: Print debugging information
-              run: |
-                echo "Python version $(python --version) running"
-                echo "Pip version $(pip --version) running"
-                echo "Flask version $(pip show flask | grep Version) running"
-                echo "Working Directory $(pwd)"
-                echo "Contents of Working Directory $(ls -l)"
-                echo "Contents of site-packages $(ls -l venv/lib/python3.9/site-packages)"
-  
-            - name: Run the tests from the test.py file
-              run: |
-                python -m unittest discover -s ./tests -p "test.py" 
-  
-    deploy:
-      needs: test
-      runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+      - name: Verify test job success
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Tests passed. Proceeding with deployment."
+          else
+            echo "Tests failed. Aborting deployment."
+            exit 1
+          fi
 
-        - name: Log in to Docker Hub
-          run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-        - name: Build the Docker image
-          run: docker build -t hyperionduck/mariadbflask:latest .
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: hyperionduck/mariadbflask:latest
 
-        - name: Push the Docker image to Docker Hub 
-          run: docker push hyperionduck/mariadbflask:latest
+  notify:
+    needs: [test, verify_and_deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify success
+        if: success()
+        run: |
+          echo "Pipeline completed successfully!"
+          echo "Code has been tested and pushed to the main branch."
 
-#In a GitHub Actions workflow, each run command is executed in a new shell session, 
-#so you need to activate the virtual environment in each step where it is required. 
-#However, you can streamline this by combining related commands into a single run block.
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "Pipeline failed. The push to the main branch was unsuccessful."
+          echo "Please check the test results and fix any issues before pushing again."
