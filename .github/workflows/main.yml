@@ -62,6 +62,16 @@ jobs:
           push: true
           tags: hyperionduck/mariadbflask:latest
 
+      - name: SSH and run Docker Compose
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/Documents
+            docker-compose up -d
+            
   notify:
     needs: [test, verify_and_deploy]
     runs-on: ubuntu-latest
@@ -79,3 +89,5 @@ jobs:
         run: |
           echo "Pipeline failed. The push to the main branch was unsuccessful."
           echo "Please check the test results and fix any issues before pushing again."
+
+  

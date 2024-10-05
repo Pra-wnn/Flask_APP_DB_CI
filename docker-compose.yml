@@ -1,29 +1,43 @@
-version: '3.8'
 
 services:
   web:
-    build: .
+    image: hyperionduck/flaskmariadb
     ports:
       - "5000:5000"
+    volumes:
+      - shared_data:/db-dump
     environment:
       - FLASK_ENV=development
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=root
+      - MYSQL_USER=proteus
+      - MYSQL_PASSWORD=pass
       - MYSQL_DATABASE=mydbc
+      - MYSQL_ROOT_PASSWORD=root
       - DB_HOST=db
     depends_on:
       - db
+    networks:
+      - app-network
 
   db:
     image: mariadb:latest
     restart: always
     environment:
       MYSQL_DATABASE: mydbc
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
+      MYSQL_USER: proteus
+      MYSQL_PASSWORD: pass
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
     volumes:
-      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./db-dump/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql  # Mount the volume to the MariaDB data director
+      - shared_data:/docker-entrypoint-initdb.d  # Mount the volume to the MariaDB init script
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+  shared_data:
+
+
+networks:
+  app-network:
